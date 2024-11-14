@@ -1,9 +1,11 @@
-const axios = require("axios");
+import axios from "axios";
+import { pageGenTemplate } from "./page-prompt-template.js";
 // const { extractAndGroupPromptRteObjects } = require("./findPrompts");
-const { extractAndGroupPromptRteObjects } = require("./findPromptsForRTE");
+// const { extractAndGroupPromptRteObjects } = require("./findPromptsForRTE");
+import {extractAndGroupPromptRteObjects} from "./findPromptsInstructions.js"
 
 const endpoint =
-    "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/allegra-allergies-relief-1731442902282/body";
+    "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/allegra-allergies-for-midwest-segment/body";
 
 async function fetchData() {
     try {
@@ -16,7 +18,8 @@ async function fetchData() {
         // Example usage:
         try {
             const groupedPrompts = extractAndGroupPromptRteObjects(inputJson);
-            console.log("Grouped JSON output:", JSON.stringify(groupedPrompts, null, 2));
+            // console.log("Grouped JSON output:", JSON.stringify(groupedPrompts, null, 4));
+            return JSON.stringify(groupedPrompts, null, 4);
         } catch (error) {
             console.error("Error processing JSON:", error.message);
         }
@@ -25,4 +28,10 @@ async function fetchData() {
     }
 }
 
-fetchData();
+let pagePromptData = await fetchData();
+
+console.log('pagePromptData',pagePromptData);
+
+
+let contentSchemaProps = pageGenTemplate.properties.contentSchema.properties
+// console.log('contentSchemaProps',contentSchemaProps);
