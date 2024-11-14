@@ -1,8 +1,8 @@
 import axios from "axios";
+
 import { pageGenTemplate } from "./page-prompt-template.js";
-// const { extractAndGroupPromptRteObjects } = require("./findPrompts");
-// const { extractAndGroupPromptRteObjects } = require("./findPromptsForRTE");
-import {extractAndGroupPromptRteObjects} from "./findPromptsInstructions.js"
+import { processPageDelieveryData } from "./findPromptsInstructions.js"
+import { transformComponentData } from "./transformToPrompt.js"
 
 const endpoint =
     "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/allegra-allergies-for-midwest-segment/body";
@@ -10,16 +10,13 @@ const endpoint =
 async function fetchData() {
     try {
         const response = await axios.get(endpoint);
-        // console.log('Response Data:', response.data);
-
-        let inputJson = response.data;
-        // console.log("inputJson", inputJson);
-
-        // Example usage:
+        const resData = response.data;
+        
+        // console.log('resData',resData);
         try {
-            const groupedPrompts = extractAndGroupPromptRteObjects(inputJson);
-            // console.log("Grouped JSON output:", JSON.stringify(groupedPrompts, null, 4));
-            return JSON.stringify(groupedPrompts, null, 4);
+            const groupedPrompts = processPageDelieveryData(resData);
+            // return JSON.stringify(groupedPrompts, null, 4);
+            return groupedPrompts
         } catch (error) {
             console.error("Error processing JSON:", error.message);
         }
@@ -28,10 +25,14 @@ async function fetchData() {
     }
 }
 
+
+
 let pagePromptData = await fetchData();
 
-console.log('pagePromptData',pagePromptData);
+
+const generatedContentSchema = transformComponentData(pagePromptData);
+pageGenTemplate.properties.contentSchema.properties = {...pageGenTemplate.properties.contentSchema.properties, ...generatedContentSchema}
 
 
-let contentSchemaProps = pageGenTemplate.properties.contentSchema.properties
-// console.log('contentSchemaProps',contentSchemaProps);
+console.log(JSON.stringify(pageGenTemplate, null, 2));
+
