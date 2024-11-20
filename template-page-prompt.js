@@ -55,27 +55,6 @@ export const pageGenTemplate = {
                     "type": "string",
                     "description": "Generate a dynamic, SEO-optimized page title and URL that includes ${brand} ${product_type} for ${hubspot_list}. Make the title varied by incorporating related keywords, product benefits, or usage scenarios to improve search ranking and click-through rates."
                 },
-                "Hubspot Email: CTA": {
-                    "type": "object",
-                    "properties": {
-                        "components": {
-                            "type": "array",
-                            "items": [
-                                {
-                                    "name": "textContent",
-                                    "type": "html",
-                                    "components": [
-                                        {
-                                            "tag": "p",
-                                            "maxCharacters": 180,
-                                            "description": "Provide a brief call to action, persuasive message encouraging readers to click this text to see how they can prevent issues based on their target_audience"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                },
                 "Hubspot Email: Content EmailProducts": {
                     "type": "object",
                     "properties": {

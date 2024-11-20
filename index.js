@@ -1,38 +1,64 @@
-import axios from "axios";
+import { fetchData } from "./fetchMagnoliaData.js";
+import { transformDataToSchema } from "./processData/transformToPrompt.js";
+import { pageGenTemplate } from "./template-page-prompt.js";
 
-import { pageGenTemplate } from "./page-prompt-template.js";
-import { processPageDelieveryData } from "./findPromptsInstructions.js"
-import { transformComponentData } from "./transformToPrompt.js"
-
-const endpoint =
-    "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/allegra-allergies-for-midwest-segment/body";
-
-async function fetchData() {
+/**
+ * Generates a page prompt by fetching data, transforming it, and merging with template
+ * @returns {Promise<Object>} The generated page prompt
+ * @throws {Error} If data fetching or transformation fails
+ */
+export async function generatePagePrompt() {
     try {
-        const response = await axios.get(endpoint);
-        const resData = response.data;
-        
-        // console.log('resData',resData);
-        try {
-            const groupedPrompts = processPageDelieveryData(resData);
-            // return JSON.stringify(groupedPrompts, null, 4);
-            return groupedPrompts
-        } catch (error) {
-            console.error("Error processing JSON:", error.message);
+        // Fetch and transform data
+        const pagePromptData = await fetchData();
+        if (!pagePromptData) {
+            throw new Error("Failed to fetch page data");
         }
+
+        // Transform the data to schema format
+        const generatedContentSchema = transformDataToSchema(pagePromptData);
+        if (!generatedContentSchema) {
+            throw new Error("Failed to transform data to schema");
+        }
+
+        // Create a deep copy of the template to avoid mutation
+        const finalTemplate = JSON.parse(JSON.stringify(pageGenTemplate));
+
+        // Merge the generated schema with the template
+        finalTemplate.properties.contentSchema.properties = {
+            ...finalTemplate.properties.contentSchema.properties,
+            ...generatedContentSchema,
+        };
+
+        return finalTemplate;
     } catch (error) {
-        console.error("Error fetching data:", error.message);
+        console.error("Error generating page prompt:", error.message);
+        throw error;
     }
 }
 
+/**
+ * Main execution function
+ */
+export async function run() {
+    try {
+        const prompt = await generatePagePrompt();
 
+        // console.log('✨ Generated Prompt:');
+        // console.log(JSON.stringify(prompt, null, 2));
 
-let pagePromptData = await fetchData();
+        return prompt;
+    } catch (error) {
+        console.error("❌ Failed to generate prompt:", error.message);
+        throw error;
+    }
+}
 
-
-const generatedContentSchema = transformComponentData(pagePromptData);
-pageGenTemplate.properties.contentSchema.properties = {...pageGenTemplate.properties.contentSchema.properties, ...generatedContentSchema}
-
-
-console.log(JSON.stringify(pageGenTemplate, null, 2));
-
+// Optional: Export a function to directly execute and handle errors
+export async function execute() {
+    try {
+        return await run();
+    } catch (error) {
+        process.exit(1);
+    }
+}

@@ -1,3 +1,8 @@
+
+// Target Prompt Instruction Fields
+const FIELDS_ENDWITH = "_promptRte"
+const  RTE_FIELDS = "textContent_promptRte" // Need to know so we can dig deeper
+
 export function processPageDelieveryData(obj) {
     const allPrompts = {};
     
@@ -27,12 +32,12 @@ export function processPageDelieveryData(obj) {
             Object.entries(current).forEach(([key, value]) => {
                 const newPath = path ? `${path}.${key}` : key;
                 
-                if (key.endsWith('_promptRte')) {
+                if (key.endsWith(FIELDS_ENDWITH)) {
                     const parentInfo = findParentInfo(newPath, obj);
                     const nestedItems = [];
                     
                     Object.entries(value).forEach(([k, v]) => {
-                        if (k.startsWith('textContent_promptRte') && !isNaN(k.slice(-1))) {
+                        if (k.startsWith(RTE_FIELDS) && !isNaN(k.slice(-1))) {
                             nestedItems.push(v);
                         }
                     });
@@ -41,7 +46,7 @@ export function processPageDelieveryData(obj) {
                     if (nestedItems.length > 0) {
                         modifiedValue.items = nestedItems;
                         Object.keys(modifiedValue).forEach(k => {
-                            if (k.startsWith('textContent_promptRte') && !isNaN(k.slice(-1))) {
+                            if (k.startsWith(RTE_FIELDS) && !isNaN(k.slice(-1))) {
                                 delete modifiedValue[k];
                             }
                         });

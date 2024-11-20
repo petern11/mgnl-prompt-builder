@@ -1,4 +1,4 @@
-export function transformComponentData(data) {
+export function transformDataToSchema(data) {
     const result = {};
     
     // Helper function to clean component names
