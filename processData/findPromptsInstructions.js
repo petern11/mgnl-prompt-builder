@@ -1,8 +1,29 @@
-// Target Prompt Instruction Fields
-const FIELDS_ENDWITH = "_prompt"
+// Target Prompt Instruction Fields and type mappings
+const TYPE_SUFFIXES = {
+    '_promptRte': 'html',
+    '_promptImage': 'image',
+    '_promptText': 'text'
+};
 
 export function processPageDelieveryData(obj) {
     const allPrompts = {};
+    
+    function getTypeFromKey(key) {
+        for (const [suffix, type] of Object.entries(TYPE_SUFFIXES)) {
+            if (key.endsWith(suffix)) {
+                return {
+                    type,
+                    baseName: key.slice(0, -suffix.length)
+                };
+            }
+        }
+        return null;
+    }
+    
+    function processClassNames(classNamesString) {
+        if (!classNamesString) return [];
+        return classNamesString.split(' ').filter(Boolean);
+    }
     
     function findParentInfo(path, originalObj) {
         const parts = path.split('.');
@@ -25,69 +46,81 @@ export function processPageDelieveryData(obj) {
         };
     }
     
-    function processClassNames(classNamesString) {
-        if (!classNamesString) return [];
-        return classNamesString.split(' ').filter(Boolean);
-    }
-    
-    function processPromptData(value, key) {
-        // Handle image prompts differently
-        if (key.toLowerCase().includes('image')) {
-            return {
-                type: "image",
-                description: value.description || "",
-                assetFolder: value.targetDamFolder || ""
-            };
-        }
-        
-        // Handle RTE components
+    function processRTEComponents(promptObj) {
         const components = [];
-        Object.entries(value).forEach(([fieldKey, fieldValue]) => {
-            if (fieldKey.match(/^\w+\d+$/)) {
+        
+        Object.entries(promptObj).forEach(([key, value]) => {
+            const match = key.match(/^(.+?)(\d+)$/);
+            if (match && value && typeof value === 'object') {
                 const component = {
-                    tag: fieldValue.htmlProps?.tag,
-                    description: fieldValue.description,
-                    class: processClassNames(fieldValue.classNames)
+                    tag: value.htmlProps?.tag,
+                    description: value.description,
+                    class: processClassNames(value.classNames)
                 };
                 
-                if (fieldValue.htmlProps?.maxCharacters) {
-                    component.maxCharacters = parseInt(fieldValue.htmlProps.maxCharacters, 10);
+                if (value.htmlProps?.maxCharacters) {
+                    component.maxCharacters = parseInt(value.htmlProps.maxCharacters, 10);
                 }
                 
-                components.push(component);
+                if (component.tag && component.description) {
+                    components.push(component);
+                }
             }
         });
         
-        if (components.length > 0) {
-            const baseName = key.replace(/_prompt$/, '');
-            return {
-                type: "html",
-                name: baseName,
-                components: components
-            };
-        }
+        return components;
+    }
+    
+    function processPromptValue(value, key) {
+        const typeInfo = getTypeFromKey(key);
+        if (!typeInfo) return null;
         
-        // Handle other fields
-        return {
-            description: value.description,
-            ...(value.targetDamFolder && { assetFolder: value.targetDamFolder })
-        };
+        const { type, baseName } = typeInfo;
+        
+        switch (type) {
+            case 'text':
+                return {
+                    name: baseName,
+                    type: 'text',
+                    maxCharacters: parseInt(value.maxCharacters, 10) || null,
+                    description: value.description || ''
+                };
+            case 'image':
+                return {
+                    name: baseName,
+                    type: 'image',
+                    description: value.description || '',
+                    ...(value.targetDamFolder && { assetFolder: value.targetDamFolder })
+                };
+            case 'html':
+                const components = processRTEComponents(value);
+                return {
+                    name: baseName,
+                    type: 'html',
+                    components
+                };
+            default:
+                return null;
+        }
     }
     
     function traverse(current, path = '') {
         if (current && typeof current === 'object') {
             Object.entries(current).forEach(([key, value]) => {
                 const newPath = path ? `${path}.${key}` : key;
+                const typeInfo = getTypeFromKey(key);
                 
-                if (key.endsWith(FIELDS_ENDWITH)) {
+                if (typeInfo) {
                     const parentInfo = findParentInfo(newPath, obj);
-                    const processedValue = processPromptData(value, key);
+                    const processedValue = processPromptValue(value, key);
                     
-                    allPrompts[newPath] = {
-                        promptData: processedValue,
-                        parentTemplate: parentInfo.template,
-                        componentName: parentInfo.componentName
-                    };
+                    if (processedValue) {
+                        allPrompts[newPath] = {
+                            promptData: processedValue,
+                            parentTemplate: parentInfo.template,
+                            componentName: parentInfo.componentName
+                        };
+                    }
                 }
                 
                 if (value && typeof value === 'object') {

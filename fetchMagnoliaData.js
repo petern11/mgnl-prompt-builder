@@ -4,21 +4,37 @@ import { processPageDelieveryData } from "./processData/findPromptsInstructions.
 const endpoint =
     "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/prompt-builder/email-prompt-builder/body";
     
-
 export async function fetchData() {
     try {
         const response = await axios.get(endpoint);
-        const resData = response.data;
         
-        // console.log('resData',resData);
+        if (!response?.data) {
+            throw new Error("No data received from endpoint");
+        }
+        
         try {
-            const groupedPrompts = processPageDelieveryData(resData);
-            // return JSON.stringify(groupedPrompts, null, 4);
-            return groupedPrompts
-        } catch (error) {
-            console.error("Error processing JSON:", error.message);
+            const groupedPrompts = processPageDelieveryData(response.data);
+            
+            if (!groupedPrompts) {
+                throw new Error("Failed to process page delivery data");
+            }
+            
+            return groupedPrompts;
+            
+        } catch (processingError) {
+            console.error("Error processing page delivery data:", processingError);
+            throw processingError;
         }
     } catch (error) {
-        console.error("Error fetching data:", error.message);
+        console.error("Error in fetchData:", error.message);
+        
+        if (error.response) {
+            console.error("Response error details:", {
+                status: error.response.status,
+                data: error.response.data
+            });
+        }
+        
+        throw error;
     }
 }

@@ -1,3 +1,5 @@
+// In transformToPrompt.js:
+
 export function transformDataToSchema(data) {
     const result = {};
     
@@ -22,60 +24,59 @@ export function transformDataToSchema(data) {
             Object.entries(prop).forEach(([key, value]) => {
                 const cleanName = cleanComponentName(key);
                 
-                // Handle image type
-                if (value.type === "image") {
-                    const imageItem = {
-                        name: cleanName,
-                        type: "image",
-                        description: value.description,
-                        assetFolder: value.assetFolder
-                    };
-                    result[componentTitle].properties.components.items.push(imageItem);
+                let item;
+                switch (value.type) {
+                    case 'text':
+                        item = {
+                            name: cleanName,
+                            type: "text",
+                            maxCharacters: value.maxCharacters,
+                            description: value.description
+                        };
+                        break;
+                        
+                    case 'image':
+                        item = {
+                            name: cleanName,
+                            type: "image",
+                            description: value.description,
+                            ...(value.assetFolder && { assetFolder: value.assetFolder })
+                        };
+                        break;
+                        
+                    case 'html':
+                        if (value.components && value.components.length > 0) {
+                            item = {
+                                name: cleanName,
+                                type: "html",
+                                components: value.components.map(comp => ({
+                                    tag: comp.tag,
+                                    maxCharacters: comp.maxCharacters,
+                                    class: comp.class,
+                                    description: comp.description
+                                }))
+                            };
+                        }
+                        break;
                 }
-                // Handle HTML type with components
-                else if (value.type === "html" && value.components) {
-                    const componentItem = {
-                        name: cleanName,
-                        type: "html",
-                        components: value.components.map(comp => ({
-                            tag: comp.tag,
-                            maxCharacters: comp.maxCharacters,
-                            class: comp.class,
-                            description: comp.description
-                        }))
-                    };
-                    result[componentTitle].properties.components.items.push(componentItem);
-                }
-                // Handle other fields
-                else if (value.description) {
-                    const componentItem = {
-                        name: cleanName,
-                        type: determineType(cleanName),
-                        description: value.description,
-                        ...(value.assetFolder && { assetFolder: value.assetFolder })
-                    };
-                    result[componentTitle].properties.components.items.push(componentItem);
+                
+                if (item) {
+                    result[componentTitle].properties.components.items.push(item);
                 }
             });
         });
         
-        // Sort items to ensure consistent order
+        // Sort items - images first, then text, then html
         result[componentTitle].properties.components.items.sort((a, b) => {
-            // Put images first, then text content
-            if (a.type === "image" && b.type !== "image") return -1;
-            if (a.type !== "image" && b.type === "image") return 1;
+            const typeOrder = { image: 1, text: 2, html: 3 };
+            if (typeOrder[a.type] !== typeOrder[b.type]) {
+                return typeOrder[a.type] - typeOrder[b.type];
+            }
             return a.name.localeCompare(b.name);
         });
     });
     
     return result;
-}
-
-function determineType(name) {
-    if (name.toLowerCase().includes('image')) {
-        return 'image';
-    }
-    return 'html';
 }
 
 function getComponentNameFromTemplate(template) {
