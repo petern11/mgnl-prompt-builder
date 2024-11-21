@@ -2,7 +2,8 @@ import axios from "axios";
 import { processPageDelieveryData } from "./processData/findPromptsInstructions.js"
 
 const endpoint =
-    "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/allegra-allergies-for-midwest-segment/body";
+    "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/prompt-builder/email-prompt-builder/body";
+    
 
 export async function fetchData() {
     try {
