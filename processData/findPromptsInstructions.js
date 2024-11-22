@@ -6,6 +6,8 @@ const TYPE_SUFFIXES = {
 };
 
 export function processPageDelieveryData(obj) {
+    // Store the @nodes order at the top level
+    const nodeOrder = obj['@nodes'] || [];
     const allPrompts = {};
     
     function getTypeFromKey(key) {
@@ -104,6 +106,16 @@ export function processPageDelieveryData(obj) {
         }
     }
     
+    function getNodeKeyFromPath(path) {
+        const match = path.match(/\.(\d+)/);
+        return match ? match[1] : null;
+    }
+    
+    function getSortIndex(path) {
+        const nodeKey = getNodeKeyFromPath(path);
+        return nodeKey ? nodeOrder.indexOf(nodeKey) : -1;
+    }
+    
     function traverse(current, path = '') {
         if (current && typeof current === 'object') {
             Object.entries(current).forEach(([key, value]) => {
@@ -155,6 +167,40 @@ export function processPageDelieveryData(obj) {
         
         return acc;
     }, []);
+
+    // Sort groups based on their first property's position in @nodes
+    groupedResult.sort((a, b) => {
+        const aPath = a.properties[0] ? Object.keys(a.properties[0])[0] : '';
+        const bPath = b.properties[0] ? Object.keys(b.properties[0])[0] : '';
+        
+        const aIndex = getSortIndex(aPath);
+        const bIndex = getSortIndex(bPath);
+        
+        // Handle cases where one or both paths don't have matching nodes
+        if (aIndex === -1 && bIndex === -1) return 0;
+        if (aIndex === -1) return 1;
+        if (bIndex === -1) return -1;
+        
+        return aIndex - bIndex;
+    });
+
+    // Sort properties within each group based on @nodes order
+    groupedResult.forEach(group => {
+        group.properties.sort((a, b) => {
+            const aPath = Object.keys(a)[0];
+            const bPath = Object.keys(b)[0];
+            
+            const aIndex = getSortIndex(aPath);
+            const bIndex = getSortIndex(bPath);
+            
+            // Handle cases where one or both paths don't have matching nodes
+            if (aIndex === -1 && bIndex === -1) return 0;
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            
+            return aIndex - bIndex;
+        });
+    });
     
     return groupedResult;
 }

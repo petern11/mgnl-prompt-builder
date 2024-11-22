@@ -104,5 +104,5 @@ export async function execute() {
     }
 }
 
-// Execute if running directly
-execute();
+// // Execute if running directly
+// execute();
