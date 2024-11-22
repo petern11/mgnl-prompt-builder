@@ -77,13 +77,7 @@ export async function run() {
     try {
         const prompt = await generatePagePrompt();
         
-        // Generate timestamp for filename
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        // const filename = `generated-prompt-${timestamp}.json`;
-        const filename = `generated-prompt.json`;
         
-        // Save both raw and final prompts
-        await saveToFile(prompt, filename);
         
         return prompt;
     } catch (error) {
@@ -97,6 +91,15 @@ export async function execute() {
     try {
         const prompt = await run();
         console.log('✨ Generated Prompt:');
+
+        // Generate timestamp for filename
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        // const filename = `generated-prompt-${timestamp}.json`;
+        const filename = `generated-prompt.json`;
+        
+        // Save both raw and final prompts
+        await saveToFile(prompt, filename);
+
         // console.log(JSON.stringify(prompt, null, 2));
         return prompt;
     } catch (error) {
