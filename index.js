@@ -40,10 +40,10 @@ async function saveToFile(data, filename) {
  * @returns {Promise<Object>} The generated page prompt
  * @throws {Error} If data fetching or transformation fails
  */
-export async function generatePagePrompt() {
+export async function generatePagePrompt(url) {
     try {
         // Fetch and transform data
-        const pagePromptData = await fetchData();
+        const pagePromptData = await fetchData(url);
         if (!pagePromptData) {
             throw new Error("Failed to fetch page data");
         }
@@ -73,9 +73,9 @@ export async function generatePagePrompt() {
 /**
  * Main execution function
  */
-export async function run() {
+export async function run(url) {
     try {
-        const prompt = await generatePagePrompt();
+        const prompt = await generatePagePrompt(url);
         
         
         
@@ -87,9 +87,9 @@ export async function run() {
 }
 
 // Optional: Export a function to directly execute and handle errors
-export async function execute() {
+export async function execute(url) {
     try {
-        const prompt = await run();
+        const prompt = await run(url);
         console.log('✨ Generated Prompt:');
 
         // Generate timestamp for filename

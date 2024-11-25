@@ -9,16 +9,18 @@ const app = express();
 app.use(cors());  // Enable CORS for all routes
 app.use(express.json());
 
-// Create GET endpoint
 app.get('/api/prompt', async (req, res) => {
+    const url = req.query.url;
+    if (!url) {
+        return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
     try {
-        const result = await execute();
+        const result = await execute(url);
         res.status(200).json(result);
     } catch (error) {
         console.error('Error running model:', error);
-        res.status(500).json({
-            error: error.message
-        });
+        res.status(500).json({ error: error.message });
     }
 });
 

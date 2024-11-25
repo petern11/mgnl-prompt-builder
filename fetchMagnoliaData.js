@@ -1,10 +1,14 @@
 import axios from "axios";
 import { processPageDelieveryData } from "./processData/findPromptsInstructions.js"
 
-const endpoint =
-    "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/prompt-builder/email-prompt-builder/body";
+
     
-export async function fetchData() {
+export async function fetchData(endpoint) {
+    console.log('endpoint',endpoint);
+    if(!endpoint) {
+        endpoint =
+    "http://localhost:8080/local/.rest/delivery/prompt-content/hubspot-email/prompt-builder/email-prompt-builder/body";
+    }
     try {
         const response = await axios.get(endpoint);
         
